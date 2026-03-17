@@ -1,0 +1,8 @@
+node_modules/
+.next/
+.env
+.env.local
+*.log
+
+# Evitar conflito com Yarn no deploy (Coolify/Nixpacks)
+package-lock.json

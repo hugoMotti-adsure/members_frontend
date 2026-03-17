@@ -1,0 +1,6 @@
+# Coolify/Nixpacks: usar apenas Yarn (evitar detecção de package-lock.json)
+[phases.install]
+cmds = ["yarn install --frozen-lockfile"]
+
+[phases.build]
+cmds = ["yarn run build"]
