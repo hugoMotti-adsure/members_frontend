@@ -2,7 +2,10 @@
 
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, Trash2, Copy, Check, Webhook, Package, BookOpen, ExternalLink } from 'lucide-react'
+import {
+  Plus, Trash2, Copy, Check, Webhook, Package, BookOpen,
+  RefreshCw, CheckCircle2, XCircle, AlertTriangle, Clock, Activity,
+} from 'lucide-react'
 import { api } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -31,6 +34,20 @@ interface ProductMapping {
   created_at: string
 }
 
+interface WebhookLog {
+  id: string
+  platform: string
+  event: string
+  customer_email: string | null
+  customer_name: string | null
+  product_id: string | null
+  product_name: string | null
+  user_id: string | null
+  processed_at: string | null
+  error_message: string | null
+  created_at: string
+}
+
 interface Platform {
   id: string
   name: string
@@ -48,6 +65,60 @@ const PLATFORMS: Platform[] = [
   { id: 'zouti', name: 'Zouti', color: 'bg-violet-500' },
 ]
 
+const EVENT_LABELS: Record<string, string> = {
+  purchase_approved: 'Compra aprovada',
+  purchase_refunded: 'Reembolso',
+  purchase_canceled: 'Cancelamento',
+  purchase_chargeback: 'Chargeback',
+  purchase_pending: 'Aguardando pagamento',
+  subscription_active: 'Assinatura ativa',
+  subscription_canceled: 'Assinatura cancelada',
+  subscription_expired: 'Assinatura expirada',
+  unknown: 'Evento desconhecido',
+}
+
+function getLogStatus(log: WebhookLog): 'success' | 'no_mapping' | 'error' | 'pending' {
+  if (log.error_message) return 'error'
+  if (log.event === 'unknown') return 'error'
+  if (log.processed_at && log.user_id) return 'success'
+  if (log.processed_at && !log.user_id) return 'no_mapping'
+  return 'pending'
+}
+
+const STATUS_CONFIG = {
+  success: {
+    icon: CheckCircle2,
+    label: 'Processado',
+    className: 'text-green-500',
+    badge: 'bg-green-500/10 text-green-500 border-green-500/20',
+  },
+  no_mapping: {
+    icon: AlertTriangle,
+    label: 'Sem mapeamento',
+    className: 'text-amber-500',
+    badge: 'bg-amber-500/10 text-amber-500 border-amber-500/20',
+  },
+  error: {
+    icon: XCircle,
+    label: 'Erro',
+    className: 'text-destructive',
+    badge: 'bg-destructive/10 text-destructive border-destructive/20',
+  },
+  pending: {
+    icon: Clock,
+    label: 'Pendente',
+    className: 'text-muted-foreground',
+    badge: 'bg-muted text-muted-foreground',
+  },
+}
+
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleString('pt-BR', {
+    day: '2-digit', month: '2-digit', year: '2-digit',
+    hour: '2-digit', minute: '2-digit',
+  })
+}
+
 export default function IntegrationsPage() {
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [copiedUrl, setCopiedUrl] = useState<string | null>(null)
@@ -59,7 +130,13 @@ export default function IntegrationsPage() {
 
   const { data: mappings, isLoading } = useQuery<ProductMapping[]>({
     queryKey: ['product-mappings'],
-    queryFn: () => api.get('/webhooks/mappings').then((res) => res.data),
+    queryFn: () => api.get('/webhooks/mappings').then((res) => Array.isArray(res.data) ? res.data : []),
+  })
+
+  const { data: webhookLogs, isLoading: isLoadingLogs, refetch: refetchLogs } = useQuery<WebhookLog[]>({
+    queryKey: ['webhook-logs'],
+    queryFn: () => api.get('/webhooks/logs').then((res) => Array.isArray(res.data) ? res.data : []),
+    refetchInterval: 30000, // auto-refresh a cada 30s
   })
 
   const deleteMutation = useMutation({
@@ -100,6 +177,16 @@ export default function IntegrationsPage() {
       <Badge variant="secondary">{platformId}</Badge>
     )
   }
+
+  // Contadores para o resumo
+  const logSummary = (webhookLogs ?? []).reduce(
+    (acc, log) => {
+      const status = getLogStatus(log)
+      acc[status] = (acc[status] ?? 0) + 1
+      return acc
+    },
+    {} as Record<string, number>,
+  )
 
   return (
     <div className="space-y-6">
@@ -156,6 +243,136 @@ export default function IntegrationsPage() {
           <p className="text-xs text-muted-foreground mt-4">
             Clique no botão de copiar para copiar a URL do webhook da plataforma desejada
           </p>
+        </CardContent>
+      </Card>
+
+      {/* Monitor de Eventos */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Activity className="h-5 w-5" />
+                Monitor de Eventos
+              </CardTitle>
+              <CardDescription>
+                Histórico dos últimos webhooks recebidos — atualiza automaticamente a cada 30s
+              </CardDescription>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => refetchLogs()}
+              className="gap-2"
+            >
+              <RefreshCw className="h-4 w-4" />
+              Atualizar
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+
+          {/* Resumo de contadores */}
+          {(webhookLogs ?? []).length > 0 && (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {([
+                { key: 'success', label: 'Processados', icon: CheckCircle2, color: 'text-green-500' },
+                { key: 'no_mapping', label: 'Sem mapeamento', icon: AlertTriangle, color: 'text-amber-500' },
+                { key: 'error', label: 'Com erro', icon: XCircle, color: 'text-destructive' },
+                { key: 'pending', label: 'Pendentes', icon: Clock, color: 'text-muted-foreground' },
+              ] as const).map(({ key, label, icon: Icon, color }) => (
+                <div key={key} className="flex items-center gap-3 rounded-lg border bg-muted/20 p-3">
+                  <Icon className={`h-5 w-5 shrink-0 ${color}`} />
+                  <div>
+                    <p className="text-xl font-bold leading-none">{logSummary[key] ?? 0}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{label}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Tabela de logs */}
+          {isLoadingLogs ? (
+            <div className="space-y-2">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-14 bg-muted animate-pulse rounded-lg" />
+              ))}
+            </div>
+          ) : (webhookLogs ?? []).length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center mb-3">
+                <Activity className="h-7 w-7 text-muted-foreground" />
+              </div>
+              <p className="font-medium">Nenhum evento recebido ainda</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Configure a URL do webhook na sua plataforma de vendas e os eventos aparecerão aqui.
+              </p>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Plataforma</TableHead>
+                  <TableHead>Evento</TableHead>
+                  <TableHead>Cliente</TableHead>
+                  <TableHead>Produto</TableHead>
+                  <TableHead className="text-right">Recebido em</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {(webhookLogs ?? []).map((log) => {
+                  const status = getLogStatus(log)
+                  const cfg = STATUS_CONFIG[status]
+                  const StatusIcon = cfg.icon
+                  return (
+                    <TableRow key={log.id}>
+                      <TableCell>
+                        <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium ${cfg.badge}`}>
+                          <StatusIcon className="h-3.5 w-3.5" />
+                          {cfg.label}
+                        </span>
+                      </TableCell>
+                      <TableCell>{getPlatformBadge(log.platform)}</TableCell>
+                      <TableCell className="text-sm">
+                        {EVENT_LABELS[log.event] ?? log.event}
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        {log.customer_email ? (
+                          <div>
+                            <p className="font-medium leading-tight">{log.customer_name || '—'}</p>
+                            <p className="text-xs text-muted-foreground">{log.customer_email}</p>
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        {log.product_name ? (
+                          <div>
+                            <p className="leading-tight line-clamp-1">{log.product_name}</p>
+                            {log.product_id && (
+                              <p className="text-xs font-mono text-muted-foreground truncate max-w-[160px]">
+                                {log.product_id}
+                              </p>
+                            )}
+                          </div>
+                        ) : log.product_id ? (
+                          <span className="text-xs font-mono text-muted-foreground">{log.product_id}</span>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right text-xs text-muted-foreground whitespace-nowrap">
+                        {formatDate(log.created_at)}
+                      </TableCell>
+                    </TableRow>
+                  )
+                })}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
 
@@ -270,7 +487,7 @@ export default function IntegrationsPage() {
               <strong className="text-foreground">Crie o Mapeamento</strong> - Vincule o ID do produto da plataforma à entrega criada
             </li>
             <li>
-              <strong className="text-foreground">Teste</strong> - Faça uma compra de teste para verificar se o aluno é criado automaticamente
+              <strong className="text-foreground">Teste</strong> - Faça uma compra de teste e acompanhe o status no Monitor de Eventos acima
             </li>
           </ol>
         </CardContent>
