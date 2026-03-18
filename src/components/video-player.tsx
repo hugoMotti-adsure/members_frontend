@@ -28,12 +28,13 @@ export function VideoPlayer({ url, title }: VideoPlayerProps) {
       }
     }
 
-    // Vimeo
-    const vimeoMatch = url.match(/vimeo\.com\/(?:video\/)?(\d+)/)
+    // Vimeo (suporta vídeos privados com hash: vimeo.com/ID/HASH)
+    const vimeoMatch = url.match(/vimeo\.com\/(?:video\/)?(\d+)(?:\/([a-f0-9]+))?/)
     if (vimeoMatch) {
+      const hash = vimeoMatch[2]
       return {
         type: 'iframe',
-        content: `https://player.vimeo.com/video/${vimeoMatch[1]}`,
+        content: `https://player.vimeo.com/video/${vimeoMatch[1]}${hash ? `?h=${hash}` : ''}`,
       }
     }
 
