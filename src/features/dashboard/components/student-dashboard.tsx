@@ -32,9 +32,10 @@ export function StudentDashboard() {
     queryFn: async () => {
       if (isStudentView) {
         // No preview, busca todos os cursos publicados e simula como se fossem matrículas
-        const res = await api.get('/courses', { params: { status: 'published' } })
+        const res = await api.get('/courses', { params: { published_only: true } })
         // Transforma para o mesmo formato de enrollment
-        return res.data.map((course: any) => ({
+        const courses = Array.isArray(res.data) ? res.data : []
+        return courses.map((course: any) => ({
           id: course.id,
           course: course,
           progress: { percentage: 0, completed_lessons: 0 },
@@ -42,7 +43,7 @@ export function StudentDashboard() {
           certificate_available: false,
         }))
       }
-      return api.get('/enrollments/my-courses').then((res) => res.data)
+      return api.get('/enrollments/my-courses').then((res) => Array.isArray(res.data) ? res.data : [])
     },
   })
 

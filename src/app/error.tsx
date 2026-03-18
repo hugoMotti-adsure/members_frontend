@@ -10,13 +10,12 @@ export default function GlobalError({
   reset: () => void
 }) {
   useEffect(() => {
-    // Detecta erro de chunk do Next.js após redeploy
+    // Detecta erro de chunk do Next.js após redeploy (APENAS erros de carregamento de chunk)
     // e recarrega automaticamente uma vez para buscar os novos arquivos
     const isChunkError =
       error?.message?.includes('ChunkLoadError') ||
       error?.message?.includes('Loading chunk') ||
       error?.message?.includes('Failed to fetch dynamically imported module') ||
-      error?.message?.includes('is not a function') ||
       error?.name === 'ChunkLoadError'
 
     if (isChunkError) {
@@ -48,9 +47,14 @@ export default function GlobalError({
         <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.5rem' }}>
           Algo deu errado
         </h2>
-        <p style={{ color: '#a1a1aa', marginBottom: '1.5rem' }}>
-          A plataforma foi atualizada. Atualize a página para continuar.
+        <p style={{ color: '#a1a1aa', marginBottom: '0.75rem' }}>
+          Ocorreu um erro inesperado. Tente atualizar a página.
         </p>
+        {error?.message && (
+          <p style={{ color: '#71717a', fontSize: '0.75rem', marginBottom: '1.5rem', fontFamily: 'monospace', background: '#18181b', padding: '0.5rem 0.75rem', borderRadius: '0.375rem', maxWidth: '28rem', wordBreak: 'break-word' }}>
+            {error.message}
+          </p>
+        )}
         <button
           onClick={() => {
             sessionStorage.removeItem('chunk-error-reload')
