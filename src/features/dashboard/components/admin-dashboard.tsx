@@ -6,20 +6,39 @@ import { api } from '@/lib/api'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 export function AdminDashboard() {
-  const { data: stats, isLoading } = useQuery({
+  const { data: rawStats, isLoading } = useQuery({
     queryKey: ['dashboard-stats'],
     queryFn: () => api.get('/analytics/dashboard').then((res) => res.data),
   })
 
-  const { data: recentActivity } = useQuery({
+  const { data: rawRecentActivity } = useQuery({
     queryKey: ['recent-activity'],
     queryFn: () => api.get('/analytics/recent-activity?limit=5').then((res) => res.data),
   })
 
-  const { data: topStudents } = useQuery({
+  const { data: rawTopStudents } = useQuery({
     queryKey: ['top-students'],
     queryFn: () => api.get('/analytics/top-students?limit=5').then((res) => res.data),
   })
+
+  // Garante que dados de array sejam sempre arrays, mesmo se a API retornar algo inesperado
+  const stats = rawStats
+  const topStudents: any[] = Array.isArray(rawTopStudents) ? rawTopStudents : []
+  const recentActivity: any[] = Array.isArray(rawRecentActivity) ? rawRecentActivity : []
+
+  // Log para diagnóstico (remover após resolver o bug)
+  if (rawTopStudents !== undefined || rawRecentActivity !== undefined) {
+    console.error('[Dashboard debug]', {
+      topStudentsType: typeof rawTopStudents,
+      topStudentsIsArray: Array.isArray(rawTopStudents),
+      topStudentsValue: rawTopStudents,
+      recentActivityType: typeof rawRecentActivity,
+      recentActivityIsArray: Array.isArray(rawRecentActivity),
+      recentActivityValue: rawRecentActivity,
+      statsType: typeof rawStats,
+      statsIsArray: Array.isArray(rawStats),
+    })
+  }
 
   const statCards = [
     {
