@@ -43,7 +43,7 @@ import {
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { toast } from "sonner";
+import { useToast } from "@/components/ui/use-toast";
 
 interface PlatformStats {
   total_schools: number;
@@ -70,6 +70,7 @@ interface School {
 export default function PlatformPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   const [search, setSearch] = useState("");
 
   const { data: stats, isLoading: statsLoading } = useQuery<PlatformStats>({
@@ -88,9 +89,9 @@ export default function PlatformPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["platform-schools"] });
       queryClient.invalidateQueries({ queryKey: ["platform-stats"] });
-      toast.success("Status da escola atualizado");
+      toast({ title: "Status da escola atualizado" });
     },
-    onError: () => toast.error("Erro ao atualizar status"),
+    onError: () => toast({ title: "Erro ao atualizar status", variant: "destructive" }),
   });
 
   const switchMutation = useMutation({
@@ -109,7 +110,7 @@ export default function PlatformPage() {
       });
       window.open(`/platform/switch?${params.toString()}`, "_blank");
     },
-    onError: () => toast.error("Erro ao acessar escola"),
+    onError: () => toast({ title: "Erro ao acessar escola", variant: "destructive" }),
   });
 
   const filtered = schools.filter(

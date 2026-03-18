@@ -15,7 +15,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ArrowLeft, Building2, CheckCircle2 } from "lucide-react";
-import { toast } from "sonner";
+import { useToast } from "@/components/ui/use-toast";
 
 interface CreateSchoolDto {
   name: string;
@@ -42,6 +42,7 @@ function generateSlug(text: string) {
 
 export default function NewSchoolPage() {
   const router = useRouter();
+  const { toast } = useToast();
   const [created, setCreated] = useState<CreateSchoolResult | null>(null);
 
   const [form, setForm] = useState<CreateSchoolDto>({
@@ -68,19 +69,19 @@ export default function NewSchoolPage() {
       api.post<CreateSchoolResult>("/platform/schools", data).then((r) => r.data),
     onSuccess: (data) => {
       setCreated(data);
-      toast.success("Escola criada com sucesso!");
+      toast({ title: "Escola criada com sucesso!" });
     },
     onError: (error: any) => {
       const msg =
         error?.response?.data?.message || "Erro ao criar escola";
-      toast.error(msg);
+      toast({ title: msg, variant: "destructive" });
     },
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name || !form.slug || !form.owner_email || !form.owner_name || !form.owner_password) {
-      toast.error("Preencha todos os campos obrigatórios");
+      toast({ title: "Preencha todos os campos obrigatórios", variant: "destructive" });
       return;
     }
     createMutation.mutate(form);
