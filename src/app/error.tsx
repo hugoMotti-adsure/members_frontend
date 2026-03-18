@@ -32,46 +32,44 @@ export default function GlobalError({
   }, [error])
 
   return (
-    <html>
-      <body
-        style={{
-          margin: 0,
-          minHeight: '100vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          backgroundColor: '#09090b',
-          color: '#fafafa',
-          fontFamily: 'system-ui, sans-serif',
-        }}
-      >
-        <div style={{ textAlign: 'center', padding: '2rem' }}>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.5rem' }}>
-            Algo deu errado
-          </h2>
-          <p style={{ color: '#a1a1aa', marginBottom: '1.5rem' }}>
-            A plataforma foi atualizada. Atualize a página para continuar.
-          </p>
-          <button
-            onClick={() => {
-              sessionStorage.removeItem('chunk-error-reload')
-              window.location.reload()
-            }}
-            style={{
-              padding: '0.625rem 1.25rem',
-              backgroundColor: '#e11d48',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '0.5rem',
-              fontSize: '0.875rem',
-              fontWeight: 600,
-              cursor: 'pointer',
-            }}
-          >
-            Atualizar página
-          </button>
-        </div>
-      </body>
-    </html>
+    <div
+      style={{
+        margin: 0,
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#09090b',
+        color: '#fafafa',
+        fontFamily: 'system-ui, sans-serif',
+      }}
+    >
+      <div style={{ textAlign: 'center', padding: '2rem' }}>
+        <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.5rem' }}>
+          Algo deu errado
+        </h2>
+        <p style={{ color: '#a1a1aa', marginBottom: '1.5rem' }}>
+          A plataforma foi atualizada. Atualize a página para continuar.
+        </p>
+        <button
+          onClick={() => {
+            sessionStorage.removeItem('chunk-error-reload')
+            window.location.reload()
+          }}
+          style={{
+            padding: '0.625rem 1.25rem',
+            backgroundColor: '#e11d48',
+            color: '#fff',
+            border: 'none',
+            borderRadius: '0.5rem',
+            fontSize: '0.875rem',
+            fontWeight: 600,
+            cursor: 'pointer',
+          }}
+        >
+          Atualizar página
+        </button>
+      </div>
+    </div>
   )
 }
