@@ -9,6 +9,7 @@ import {
   Award,
   BarChart3,
   BookOpen,
+  Building2,
   FolderOpen,
   GraduationCap,
   Layers,
@@ -73,6 +74,10 @@ const adminNavigation = [
 
 const settingsNavigation = [
   { name: "Configurações", href: "/settings", icon: Settings },
+];
+
+const platformNavigation = [
+  { name: "Painel da Plataforma", href: "/platform", icon: Building2 },
 ];
 
 export function Sidebar() {
@@ -224,6 +229,40 @@ export function Sidebar() {
                     isActive
                       ? "bg-primary/10 text-primary"
                       : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                  )}
+                >
+                  <item.icon className="h-5 w-5 flex-shrink-0" />
+                  {!isCollapsed && item.name}
+                </Link>
+              );
+            })}
+          </>
+        )}
+
+        {/* Super Admin - Painel da Plataforma */}
+        {!isStudentView && user?.role === "super_admin" && (
+          <>
+            {!isCollapsed && (
+              <div className="pt-4 pb-2">
+                <span className="px-3 text-xs font-semibold text-indigo-500 uppercase tracking-wider">
+                  Plataforma
+                </span>
+              </div>
+            )}
+            {platformNavigation.map((item) => {
+              const isActive =
+                pathname === item.href || pathname.startsWith(item.href + "/");
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  title={isCollapsed ? item.name : undefined}
+                  className={cn(
+                    "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                    isCollapsed && "justify-center px-2",
+                    isActive
+                      ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300"
+                      : "text-indigo-500 hover:bg-indigo-50 hover:text-indigo-700 dark:hover:bg-indigo-950",
                   )}
                 >
                   <item.icon className="h-5 w-5 flex-shrink-0" />
