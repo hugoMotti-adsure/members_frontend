@@ -26,20 +26,6 @@ export function AdminDashboard() {
   const topStudents: any[] = Array.isArray(rawTopStudents) ? rawTopStudents : []
   const recentActivity: any[] = Array.isArray(rawRecentActivity) ? rawRecentActivity : []
 
-  // Log para diagnóstico (remover após resolver o bug)
-  if (rawTopStudents !== undefined || rawRecentActivity !== undefined) {
-    console.error('[Dashboard debug]', {
-      topStudentsType: typeof rawTopStudents,
-      topStudentsIsArray: Array.isArray(rawTopStudents),
-      topStudentsValue: rawTopStudents,
-      recentActivityType: typeof rawRecentActivity,
-      recentActivityIsArray: Array.isArray(rawRecentActivity),
-      recentActivityValue: rawRecentActivity,
-      statsType: typeof rawStats,
-      statsIsArray: Array.isArray(rawStats),
-    })
-  }
-
   const statCards = [
     {
       title: 'Total de Alunos',

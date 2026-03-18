@@ -33,29 +33,81 @@ export function useTenant() {
 
 const MAIN_DOMAIN = process.env.NEXT_PUBLIC_MAIN_DOMAIN || 'trivapp.com.br'
 
+function hexToHslValue(hex: string): string | null {
+  const normalizedHex = hex.replace('#', '')
+
+  if (!/^[0-9A-Fa-f]{6}$/.test(normalizedHex)) {
+    return null
+  }
+
+  const r = parseInt(normalizedHex.substring(0, 2), 16) / 255
+  const g = parseInt(normalizedHex.substring(2, 4), 16) / 255
+  const b = parseInt(normalizedHex.substring(4, 6), 16) / 255
+
+  const max = Math.max(r, g, b)
+  const min = Math.min(r, g, b)
+  const delta = max - min
+  const lightness = (max + min) / 2
+
+  let hue = 0
+  let saturation = 0
+
+  if (delta !== 0) {
+    saturation =
+      lightness > 0.5 ? delta / (2 - max - min) : delta / (max + min)
+
+    switch (max) {
+      case r:
+        hue = ((g - b) / delta + (g < b ? 6 : 0)) / 6
+        break
+      case g:
+        hue = ((b - r) / delta + 2) / 6
+        break
+      case b:
+        hue = ((r - g) / delta + 4) / 6
+        break
+    }
+  }
+
+  return `${Math.round(hue * 360)} ${Math.round(saturation * 100)}% ${Math.round(lightness * 100)}%`
+}
+
+function applyTenantTheme(primaryColor?: string) {
+  if (!primaryColor) {
+    return
+  }
+
+  const hslValue = hexToHslValue(primaryColor)
+
+  if (!hslValue) {
+    return
+  }
+
+  document.documentElement.style.setProperty('--primary', hslValue)
+  document.documentElement.style.setProperty('--accent', hslValue)
+  document.documentElement.style.setProperty('--ring', hslValue)
+  document.documentElement.style.setProperty('--primary-hex', primaryColor)
+}
+
 function extractSubdomain(hostname: string): string | null {
   const cleanHost = hostname.split(':')[0].toLowerCase()
-  
-  // Se é localhost, não tem subdomínio
+
   if (cleanHost === 'localhost' || cleanHost === '127.0.0.1') {
     return null
   }
-  
-  // Se termina com o domínio principal
+
   if (cleanHost.endsWith(`.${MAIN_DOMAIN}`)) {
     const subdomain = cleanHost.replace(`.${MAIN_DOMAIN}`, '')
-    
-    // Ignora www e api
+
     if (subdomain && subdomain !== 'www' && subdomain !== 'api') {
       return subdomain
     }
   }
-  
-  // Retorna o host completo para buscar domínio customizado
+
   if (cleanHost !== MAIN_DOMAIN && cleanHost !== `www.${MAIN_DOMAIN}`) {
     return cleanHost
   }
-  
+
   return null
 }
 
@@ -76,7 +128,6 @@ export function TenantProvider({ children }: { children: ReactNode }) {
       const subdomain = extractSubdomain(hostname)
 
       if (!subdomain) {
-        // Sem subdomínio - é a landing page ou localhost
         setIsLoading(false)
         return
       }
@@ -84,23 +135,16 @@ export function TenantProvider({ children }: { children: ReactNode }) {
       setIsSubdomain(true)
 
       try {
-        // Tenta buscar pelo host completo (cobre tanto slug quanto domínio customizado)
         const response = await api.get(`/tenants/by-host/${hostname}`)
-        
+
         if (response.data) {
           setTenant(response.data)
-          
-          // Salva o tenant_id para requisições autenticadas
           localStorage.setItem('tenant_id', response.data.id)
-          
-          // Aplica a cor primária se existir
-          if (response.data.primary_color) {
-            document.documentElement.style.setProperty('--primary', response.data.primary_color)
-          }
+          applyTenantTheme(response.data.primary_color)
         }
       } catch (err: any) {
         console.error('Erro ao carregar tenant:', err)
-        setError(err.response?.data?.message || 'Escola não encontrada')
+        setError(err.response?.data?.message || 'Escola nao encontrada')
       } finally {
         setIsLoading(false)
       }
