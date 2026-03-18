@@ -45,6 +45,7 @@ const PLATFORMS: Platform[] = [
   { id: 'braip', name: 'Braip', color: 'bg-purple-500' },
   { id: 'monetizze', name: 'Monetizze', color: 'bg-cyan-500' },
   { id: 'perfectpay', name: 'PerfectPay', color: 'bg-red-500' },
+  { id: 'zouti', name: 'Zouti', color: 'bg-violet-500' },
 ]
 
 export default function IntegrationsPage() {

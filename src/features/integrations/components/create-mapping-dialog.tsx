@@ -58,6 +58,7 @@ const PLATFORMS = [
   { id: 'braip', name: 'Braip' },
   { id: 'monetizze', name: 'Monetizze' },
   { id: 'perfectpay', name: 'PerfectPay' },
+  { id: 'zouti', name: 'Zouti' },
 ]
 
 export function CreateMappingDialog({ open, onOpenChange }: CreateMappingDialogProps) {
@@ -168,18 +169,31 @@ export function CreateMappingDialog({ open, onOpenChange }: CreateMappingDialogP
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="external_product_id">ID do Produto *</Label>
+              <Label htmlFor="external_product_id">
+                {selectedPlatform === 'zouti' ? 'ID da Oferta (product_offer_id) *' : 'ID do Produto *'}
+              </Label>
               <Input
                 id="external_product_id"
-                placeholder="Ex: 12345678"
+                placeholder={
+                  selectedPlatform === 'zouti'
+                    ? 'Ex: prod_offer_vxv8syl1lua76p6bhdm4u7'
+                    : 'Ex: 12345678'
+                }
                 {...register('external_product_id', { required: 'ID do produto é obrigatório' })}
               />
               {errors.external_product_id && (
                 <p className="text-sm text-destructive">{errors.external_product_id.message}</p>
               )}
-              <p className="text-xs text-muted-foreground">
-                Encontre este ID nas configurações do produto na plataforma
-              </p>
+              {selectedPlatform === 'zouti' ? (
+                <p className="text-xs text-amber-500">
+                  Na Zouti, use o <strong>product_offer_id</strong> (começa com{' '}
+                  <code className="font-mono">prod_offer_</code>). Encontre nas configurações do produto → Oferta.
+                </p>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  Encontre este ID nas configurações do produto na plataforma
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
