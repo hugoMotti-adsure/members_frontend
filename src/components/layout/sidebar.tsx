@@ -14,6 +14,7 @@ import {
   GraduationCap,
   Layers,
   LayoutDashboard,
+  Mail,
   Megaphone,
   Package,
   PanelLeftClose,
@@ -78,6 +79,7 @@ const settingsNavigation = [
 
 const platformNavigation = [
   { name: "Painel da Plataforma", href: "/platform", icon: Building2 },
+  { name: "Comunicações", href: "/platform/communications", icon: Mail },
 ];
 
 export function Sidebar() {
