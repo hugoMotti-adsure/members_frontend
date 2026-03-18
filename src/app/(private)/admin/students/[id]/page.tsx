@@ -104,6 +104,9 @@ export default function StudentDetailsPage() {
   const [newPassword, setNewPassword] = useState('')
   const [passwordCopied, setPasswordCopied] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const [sendEmailDialogOpen, setSendEmailDialogOpen] = useState(false)
+  const [emailSubject, setEmailSubject] = useState('')
+  const [emailMessage, setEmailMessage] = useState('')
 
   const copyEmail = async () => {
     if (student?.email) {
@@ -238,6 +241,24 @@ export default function StudentDetailsPage() {
         title: 'Erro ao reenviar acesso',
         description: error.response?.data?.message || 'Tente novamente',
         variant: 'destructive' 
+      })
+    },
+  })
+
+  const sendEmailMutation = useMutation({
+    mutationFn: ({ subject, message }: { subject: string; message: string }) =>
+      api.post(`/users/${id}/send-email`, { subject, message }),
+    onSuccess: () => {
+      toast({ title: 'Email enviado com sucesso' })
+      setSendEmailDialogOpen(false)
+      setEmailSubject('')
+      setEmailMessage('')
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Erro ao enviar email',
+        description: error.response?.data?.message || 'Tente novamente',
+        variant: 'destructive',
       })
     },
   })
@@ -378,7 +399,7 @@ export default function StudentDetailsPage() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setSendEmailDialogOpen(true)}>
               <Mail className="h-4 w-4 mr-2" />
               Enviar Email
             </DropdownMenuItem>
@@ -1032,6 +1053,54 @@ export default function StudentDetailsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Dialog — Enviar Email */}
+      <Dialog open={sendEmailDialogOpen} onOpenChange={setSendEmailDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Enviar Email</DialogTitle>
+            <DialogDescription>
+              Envie um email personalizado para {student?.name}.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-1">
+              <Label htmlFor="email-subject">Assunto</Label>
+              <Input
+                id="email-subject"
+                placeholder="Digite o assunto do email"
+                value={emailSubject}
+                onChange={(e) => setEmailSubject(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="email-message">Mensagem</Label>
+              <textarea
+                id="email-message"
+                className="w-full min-h-[140px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-none"
+                placeholder="Digite a mensagem do email..."
+                value={emailMessage}
+                onChange={(e) => setEmailMessage(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSendEmailDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={() => sendEmailMutation.mutate({ subject: emailSubject, message: emailMessage })}
+              disabled={sendEmailMutation.isPending || !emailSubject.trim() || !emailMessage.trim()}
+            >
+              {sendEmailMutation.isPending ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Enviando...</>
+              ) : (
+                <><Mail className="h-4 w-4 mr-2" />Enviar Email</>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
