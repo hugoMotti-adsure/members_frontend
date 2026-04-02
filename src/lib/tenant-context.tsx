@@ -124,6 +124,28 @@ export function TenantProvider({ children }: { children: ReactNode }) {
         return
       }
 
+      // Verifica ?tenant=slug na URL (usado no email de convite de nova escola)
+      const urlParams = new URLSearchParams(window.location.search)
+      const tenantParam = urlParams.get('tenant')
+
+      if (tenantParam) {
+        setIsSubdomain(true)
+        try {
+          const response = await api.get(`/tenants/slug/${tenantParam}`)
+          if (response.data) {
+            setTenant(response.data)
+            localStorage.setItem('tenant_id', response.data.id)
+            applyTenantTheme(response.data.primary_color)
+          }
+        } catch (err: any) {
+          console.error('Erro ao carregar tenant por slug:', err)
+          setError(err.response?.data?.message || 'Escola nao encontrada')
+        } finally {
+          setIsLoading(false)
+        }
+        return
+      }
+
       const hostname = window.location.hostname
       const subdomain = extractSubdomain(hostname)
 
